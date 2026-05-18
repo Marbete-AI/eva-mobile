@@ -1,6 +1,4 @@
-import Config from "react-native-config";
-
-const API_URL = Config.API_URL ?? "http://localhost:8787";
+import {API_URL} from './config';
 
 export interface ChatResponse {
   response: string;

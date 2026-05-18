@@ -5,9 +5,7 @@
  *
  * Week 2: text-based. Week 5+: voice streams added.
  */
-import Config from "react-native-config";
-
-const API_URL = Config.API_URL ?? "http://localhost:8787";
+import {API_URL} from './config';
 
 // Convert http(s) → ws(s)
 function toWsUrl(base: string): string {

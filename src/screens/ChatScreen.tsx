@@ -47,9 +47,7 @@ interface Message {
   id: string;
   role: 'user' | 'eva';
   text: string;
-  requestId?: string;
   trigger?: string;
-  feedback?: 'up' | 'down';
   timestamp: Date;
 }
 
@@ -103,26 +101,6 @@ export default function ChatScreen({navigation}: Props) {
     setLoadingWithTimeout(false);
   }, [setLoadingWithTimeout]);
 
-  // ── Feedback ──────────────────────────────────────────────────────────────
-
-  const handleFeedback = useCallback(
-    (msg: Message, type: 'up' | 'down') => {
-      // Optimistic UI update
-      setMessages(prev =>
-        prev.map(m =>
-          m.id === msg.id ? {...m, feedback: type} : m,
-        ),
-      );
-      // Send to server
-      wsRef.current?.sendFeedback(
-        type === 'up' ? 'thumbs_up' : 'thumbs_down',
-        undefined,
-        msg.requestId,
-      );
-    },
-    [],
-  );
-
   // ── Server message handler ────────────────────────────────────────────────
 
   const handleServerMessage = useCallback(
@@ -149,7 +127,6 @@ export default function ChatScreen({navigation}: Props) {
           addMessage({
             role: 'eva',
             text: msg.text,
-            requestId: msg.requestId,
             trigger: msg.trigger,
           });
           break;
@@ -233,7 +210,7 @@ export default function ChatScreen({navigation}: Props) {
     } else {
       try {
         const result = await sendMessage(text);
-        addMessage({role: 'eva', text: result.response, requestId: result.requestId});
+        addMessage({role: 'eva', text: result.response});
       } catch (err) {
         addMessage({
           role: 'eva',
@@ -329,34 +306,6 @@ export default function ChatScreen({navigation}: Props) {
                   ]}>
                   {msg.text}
                 </Text>
-
-                {/* Thumbs feedback — only on EVA messages that have a requestId */}
-                {msg.role === 'eva' && msg.requestId && (
-                  <View style={styles.feedbackRow}>
-                    <TouchableOpacity
-                      style={[
-                        styles.feedbackButton,
-                        msg.feedback === 'up' && styles.feedbackButtonActive,
-                      ]}
-                      onPress={() => handleFeedback(msg, 'up')}
-                      disabled={!!msg.feedback}>
-                      <Text style={styles.feedbackIcon}>
-                        {msg.feedback === 'up' ? '👍' : '👍'}
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        styles.feedbackButton,
-                        msg.feedback === 'down' && styles.feedbackButtonActiveDown,
-                      ]}
-                      onPress={() => handleFeedback(msg, 'down')}
-                      disabled={!!msg.feedback}>
-                      <Text style={styles.feedbackIcon}>
-                        {msg.feedback === 'down' ? '👎' : '👎'}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
               </View>
             </View>
           ))}
@@ -482,30 +431,6 @@ const styles = StyleSheet.create({
   messageText: {fontSize: 15, lineHeight: 21},
   userMessageText: {color: '#e8f0fe'},
   evaMessageText: {color: '#d0d0d0'},
-  feedbackRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#2a2a2a',
-  },
-  feedbackButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    backgroundColor: 'transparent',
-    opacity: 0.5,
-  },
-  feedbackButtonActive: {
-    backgroundColor: '#1a2a1a',
-    opacity: 1,
-  },
-  feedbackButtonActiveDown: {
-    backgroundColor: '#2a1a1a',
-    opacity: 1,
-  },
-  feedbackIcon: {fontSize: 16},
   inputRow: {
     flexDirection: 'row',
     padding: 12,
